@@ -1,0 +1,68 @@
+version: '3.8'
+services:
+    app-postgres:
+        container_name: postgres-container
+        image: "postgres"
+        networks: 
+            - books-network
+        hostname: app-postgres
+        ports:
+            - 5433:5432
+        environment:
+            POSTGRES_DB: libros
+            POSTGRES_PASSWORD: admin
+            POSTGRES_USER: postgres
+        volumes:
+            - pg_data:/var/lib/postgresql/data
+          
+    tomcat:
+        build: ./docker/tomcat
+        container_name: tomcat-container
+        networks: 
+            - books-network
+        hostname: app-tomcat
+        depends_on:
+            - app-postgres
+        ports:
+            - "8080:8080"
+    web:
+        container_name: nginx-web1
+        build: ./docker/nginx1
+        depends_on:
+            - tomcat
+        networks: 
+            - books-network
+        hostname: app-web1
+        ports:
+            - 9080:9080
+    web1:
+        container_name: nginx-web2
+        build: ./docker/nginx2
+        depends_on:
+                - tomcat
+        networks: 
+            - books-network
+        hostname: app-web2
+        ports:
+            - 9000:9000
+    web-client:
+        container_name: nginx-web-client
+        build: ./docker/nginx-web
+        depends_on:
+            - tomcat
+            - web
+            - web1
+        networks: 
+            - books-network
+        hostname: app-web-client
+        ports:
+            - 8000:8000
+networks:
+    books-network:        
+volumes:
+    pg_data:
+        driver: local
+        driver_opts:
+            o: bind
+            type: none
+            device: ./datapg  
